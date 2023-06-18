@@ -1,7 +1,6 @@
 import { Controller, MatchUpInput } from '../../types';
 import { Tournament } from '../models/tournament.js';
 import { MatchUp } from '../models/matchUp.js';
-import { Contestant } from '../models/contestant.js';
 
 const tournamentController: Controller = {};
 
