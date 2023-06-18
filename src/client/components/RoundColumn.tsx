@@ -27,7 +27,7 @@ const RoundColumn = (props: {
               el.round === currentRound ? 'active' : 'inactive'
             }`}
             id={`matchup${el.matchNumber}`}
-            key={`matchup${el.matchNumber}`}
+            key={index}
           >
             <div
               className={
