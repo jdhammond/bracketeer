@@ -41,7 +41,12 @@ const RoundColumn = (props: {
               id={`${el.matchNumber}-1`}
               onClick={updateSelections}
             >
-              {el.contestant1 && el.contestant1.name}
+              <div className='contestant-name'>
+                {el.contestant1 && el.contestant1.name}
+              </div>
+              <div className='contestant-votes'>
+                {el.contestant1 && el.contestant1votes}
+              </div>
             </div>
             <div
               className={
@@ -51,7 +56,12 @@ const RoundColumn = (props: {
               id={`${el.matchNumber}-2`}
               onClick={updateSelections}
             >
-              {el.contestant2 && el.contestant2.name}
+              <div className='contestant-name'>
+                {el.contestant2 && el.contestant2.name}
+              </div>
+              <div className='contestant-votes'>
+                {el.contestant2 && el.contestant2votes}
+              </div>
             </div>
             {el.next && (
               <Xwrapper>

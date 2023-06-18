@@ -9,10 +9,12 @@ import {
 import testTournamentData from '../../../assets/test_data/test-tournament';
 import RoundColumn from '../RoundColumn';
 import updateDisplay from './reducer';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { MatchUpType, SelectionObject } from '../../../types';
 import processMatchups from './processMatchups';
 import initialDisplayState from './initialDisplayState';
+
+const TEST_TOURNAMENT_URI = '64863e1bf5a5d7a132318e76';
 
 const Bracket = () => {
   // combine state updates with useReducer?
@@ -49,12 +51,10 @@ const Bracket = () => {
   // but also the server has to get involved at some point to advanced contestants
   // hard-code test tournament id for now
   useEffect(() => {
-    getMatchUps('64863e1bf5a5d7a132318e76');
+    getMatchUps(TEST_TOURNAMENT_URI);
   }, []);
 
   useEffect(() => {
-    console.log('USEEFFECT');
-    console.log(matchUpResponse);
     if (matchUpResponse.length) setIsLoading(false);
     displayDispatch({
       type: 'updateDisplay',
@@ -72,7 +72,6 @@ const Bracket = () => {
         selections[String(el.matchNumber)] = 0;
       }
     });
-    console.log(selections);
     setSelected(selections);
   }, [matchUpResponse]);
 
@@ -89,8 +88,9 @@ const Bracket = () => {
   const updateSelections = useCallback(
     (e: MouseEvent) => {
       console.log(selected);
-      const [matchNumber, choice] = (e.target as Element).id
-        .split('-')
+      // the id of the event target is in the form #-#. The first number is the matchup number. The second number is 0 (for no selection), 1, or 2 (for the first or second choice)
+      const [matchNumber, choice] = (e.target as Element)
+        .parentElement!.id.split('-')
         .map((el) => Number(el));
       const newSelected = { ...selected };
       if (selected[matchNumber] === choice) newSelected[matchNumber] = 0;
@@ -100,6 +100,27 @@ const Bracket = () => {
     },
     [selected]
   );
+
+  const sendVotes = async (selected: SelectionObject) => {
+    try {
+      console.log('AXIOS PATCH: ', selected);
+      const data = {
+        tournamentID: TEST_TOURNAMENT_URI,
+        selected,
+      };
+      const response = await axios.patch(
+        'http://localhost:8000/tournament/votes',
+        data
+      );
+      console.log(response);
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        console.log(err.response);
+      } else {
+        console.log(err);
+      }
+    }
+  };
 
   return (
     <div>
@@ -135,6 +156,7 @@ const Bracket = () => {
       <button onClick={() => setRound(() => round - 1)}>
         TEST: Previous Round
       </button>
+      <button onClick={() => sendVotes(selected)}>Submit votes</button>
     </div>
   );
 };

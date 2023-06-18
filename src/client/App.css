@@ -44,9 +44,26 @@
 }
 
 .contestant-container {
-  border: 1px solid red;
+  display: flex;
   height: 25px;
   margin: 5px;
+}
+
+.contestant-container > div {
+  display: flex;
+  border: 1px solid red;
+  justify-content: center;
+  align-items: center;
+}
+
+.contestant-name {
+  width: 80%;
+}
+
+.contestant-votes {
+  border: 1px solid red;
+  width: 20%;
+  padding: 2px;
 }
 
 .active > div:hover {
