@@ -6,6 +6,7 @@ import {
   MouseEvent,
   useCallback,
 } from 'react';
+
 import axios, { AxiosError } from 'axios';
 
 import { MatchUpType, SelectionObject } from '../../../types';
@@ -58,6 +59,7 @@ const Bracket = () => {
   }, []);
 
   useEffect(() => {
+    if (matchUpResponse.length) setIsLoading(false);
     displayDispatch({
       type: 'updateDisplay',
       payload: {
@@ -128,7 +130,6 @@ const Bracket = () => {
   return (
     <div>
       <div className='bracket-render-grid' style={displayState.displaySettings}>
-
         {matchUps.map((column, index) => {
           return (
             <RoundColumn
@@ -147,7 +148,6 @@ const Bracket = () => {
           .map((round, index) => {
             return <RoundColumn key={index} roundData={matchUps[round]} />;
           })}
-
       </div>
       <button
         onClick={() =>
