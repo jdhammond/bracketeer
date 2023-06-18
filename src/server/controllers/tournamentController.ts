@@ -149,6 +149,7 @@ tournamentController.create = async (req, res, next) => {
 
 tournamentController.addVotes = async (req, res, next) => {
   //eventually, logic needed so that a user can only vote 1x/round/tournament
+
   const { tournamentID, selected } = req.body;
   console.log('ADDVOTES: ', tournamentID, selected);
 

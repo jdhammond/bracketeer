@@ -6,26 +6,25 @@ import {
   MouseEvent,
   useCallback,
 } from 'react';
-import testTournamentData from '../../../assets/test_data/test-tournament';
+import axios, { AxiosError } from 'axios';
+
+import { MatchUpType, SelectionObject } from '../../../types';
+
 import RoundColumn from '../RoundColumn';
 import updateDisplay from './reducer';
-import axios, { AxiosError } from 'axios';
-import { MatchUpType, SelectionObject } from '../../../types';
 import processMatchups from './processMatchups';
+
 import initialDisplayState from './initialDisplayState';
 
+// temporary
 const TEST_TOURNAMENT_URI = '64863e1bf5a5d7a132318e76';
 
 const Bracket = () => {
-  // combine state updates with useReducer?
-
   const [displayState, displayDispatch] = useReducer(
     updateDisplay,
     initialDisplayState
   );
 
-  const [isLoading, setIsLoading] = useState(true);
-  // use this vv rather than isLoading to avoid redudancy?
   const [matchUpResponse, setMatchUpResponse] = useState<MatchUpType[]>([]);
   const [matchUps, setMatchUps] = useState<MatchUpType[][]>([]);
   const [selected, setSelected] = useState<SelectionObject>({});
@@ -42,7 +41,11 @@ const Bracket = () => {
       console.log('axios res: ', response.data);
       setMatchUpResponse(response.data.matchUps);
     } catch (err) {
-      console.log(err);
+      if (err instanceof AxiosError) {
+        console.log(err.response);
+      } else {
+        console.log(err);
+      }
     }
   };
 
@@ -55,7 +58,6 @@ const Bracket = () => {
   }, []);
 
   useEffect(() => {
-    if (matchUpResponse.length) setIsLoading(false);
     displayDispatch({
       type: 'updateDisplay',
       payload: {
@@ -113,6 +115,7 @@ const Bracket = () => {
         data
       );
       console.log(response);
+      getMatchUps(TEST_TOURNAMENT_URI);
     } catch (err) {
       if (err instanceof AxiosError) {
         console.log(err.response);
