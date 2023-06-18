@@ -1,7 +1,6 @@
 import { Controller, MatchUpInput } from '../../types';
 import { Tournament } from '../models/tournament.js';
 import { MatchUp } from '../models/matchUp.js';
-import { Contestant } from '../models/contestant.js';
 
 const tournamentController: Controller = {};
 
@@ -141,6 +140,36 @@ tournamentController.create = async (req, res, next) => {
   } catch (err) {
     return next({
       log: `Error from tournamentController.create: ${err}`,
+      status: 400,
+      message: { err: 'Failed to create tournament data' },
+    });
+  }
+};
+
+tournamentController.addVotes = async (req, res, next) => {
+  //eventually, logic needed so that a user can only vote 1x/round/tournament
+  const { tournamentID, selected } = req.body;
+  console.log('ADDVOTES: ', tournamentID, selected);
+
+  try {
+    for (const key in selected) {
+      if (selected[key] === 0) continue;
+      const query = { matchNumber: key, tournament: tournamentID };
+      const incrementObject =
+        selected[key] === 1 ? { contestant1votes: 1 } : { contestant2votes: 1 };
+      const matchUp = await MatchUp.findOne(query);
+      console.log('updating matchup # ', matchUp?.matchNumber);
+
+      const updated = await MatchUp.findOneAndUpdate(query, {
+        $inc: incrementObject,
+      }).lean();
+
+      console.log(updated);
+    }
+    return next();
+  } catch (err) {
+    return next({
+      log: `Error from tournamentController.addVotes: ${err}`,
       status: 400,
       message: { err: 'Failed to create tournament data' },
     });

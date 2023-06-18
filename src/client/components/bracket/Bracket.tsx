@@ -6,24 +6,26 @@ import {
   MouseEvent,
   useCallback,
 } from 'react';
-import testTournamentData from '../../../assets/test_data/test-tournament';
+
+import axios, { AxiosError } from 'axios';
+
+import { MatchUpType, SelectionObject } from '../../../types';
+
 import RoundColumn from '../RoundColumn';
 import updateDisplay from './reducer';
-import axios from 'axios';
-import { MatchUpType, SelectionObject } from '../../../types';
 import processMatchups from './processMatchups';
+
 import initialDisplayState from './initialDisplayState';
 
-const Bracket = () => {
-  // combine state updates with useReducer?
+// temporary
+const TEST_TOURNAMENT_URI = '64863e1bf5a5d7a132318e76';
 
+const Bracket = () => {
   const [displayState, displayDispatch] = useReducer(
     updateDisplay,
     initialDisplayState
   );
 
-  const [isLoading, setIsLoading] = useState(true);
-  // use this vv rather than isLoading to avoid redudancy?
   const [matchUpResponse, setMatchUpResponse] = useState<MatchUpType[]>([]);
   const [matchUps, setMatchUps] = useState<MatchUpType[][]>([]);
   const [selected, setSelected] = useState<SelectionObject>({});
@@ -40,7 +42,11 @@ const Bracket = () => {
       console.log('axios res: ', response.data);
       setMatchUpResponse(response.data.matchUps);
     } catch (err) {
-      console.log(err);
+      if (err instanceof AxiosError) {
+        console.log(err.response);
+      } else {
+        console.log(err);
+      }
     }
   };
 
@@ -49,13 +55,10 @@ const Bracket = () => {
   // but also the server has to get involved at some point to advanced contestants
   // hard-code test tournament id for now
   useEffect(() => {
-    getMatchUps('64863e1bf5a5d7a132318e76');
+    getMatchUps(TEST_TOURNAMENT_URI);
   }, []);
 
   useEffect(() => {
-    console.log('USEEFFECT');
-    console.log(matchUpResponse);
-    if (matchUpResponse.length) setIsLoading(false);
     displayDispatch({
       type: 'updateDisplay',
       payload: {
@@ -72,7 +75,6 @@ const Bracket = () => {
         selections[String(el.matchNumber)] = 0;
       }
     });
-    console.log(selections);
     setSelected(selections);
   }, [matchUpResponse]);
 
@@ -89,8 +91,9 @@ const Bracket = () => {
   const updateSelections = useCallback(
     (e: MouseEvent) => {
       console.log(selected);
-      const [matchNumber, choice] = (e.target as Element).id
-        .split('-')
+      // the id of the event target is in the form #-#. The first number is the matchup number. The second number is 0 (for no selection), 1, or 2 (for the first or second choice)
+      const [matchNumber, choice] = (e.target as Element)
+        .parentElement!.id.split('-')
         .map((el) => Number(el));
       const newSelected = { ...selected };
       if (selected[matchNumber] === choice) newSelected[matchNumber] = 0;
@@ -101,10 +104,31 @@ const Bracket = () => {
     [selected]
   );
 
+  const sendVotes = async (selected: SelectionObject) => {
+    try {
+      console.log('AXIOS PATCH: ', selected);
+      const data = {
+        tournamentID: TEST_TOURNAMENT_URI,
+        selected,
+      };
+      const response = await axios.patch(
+        'http://localhost:8000/tournament/votes',
+        data
+      );
+      console.log(response);
+      getMatchUps(TEST_TOURNAMENT_URI);
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        console.log(err.response);
+      } else {
+        console.log(err);
+      }
+    }
+  };
+
   return (
     <div>
       <div className='bracket-render-grid' style={displayState.displaySettings}>
-
         {matchUps.map((column, index) => {
           return (
             <RoundColumn
@@ -116,14 +140,6 @@ const Bracket = () => {
             />
           );
         })}
-
-        {Object.keys(matchUps)
-          // if bracket has left and right wings, sort columns of matchups accordingly
-          .sort((a, b) => (a[0] === 'l' ? 1 : -1))
-          .map((round, index) => {
-            return <RoundColumn key={index} roundData={matchUps[round]} />;
-          })}
-
       </div>
       <button
         onClick={() =>
@@ -144,6 +160,7 @@ const Bracket = () => {
       <button onClick={() => setRound(() => round - 1)}>
         TEST: Previous Round
       </button>
+      <button onClick={() => sendVotes(selected)}>Submit votes</button>
     </div>
   );
 };
