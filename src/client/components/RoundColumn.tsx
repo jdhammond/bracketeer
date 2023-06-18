@@ -16,10 +16,6 @@ const RoundColumn = (props: {
     updateXarrow();
   }, [props]);
 
-  // const handleHover: MouseEventHandler = (e) => {
-  //   if (e.target) (e.target as HTMLElement).innerHTML = 'hovered!';
-  // };
-
   columnData.sort((a, b) => b.matchNumber - a.matchNumber);
 
   return (
@@ -31,7 +27,7 @@ const RoundColumn = (props: {
               el.round === currentRound ? 'active' : 'inactive'
             }`}
             id={`matchup${el.matchNumber}`}
-            key={index}
+            key={`matchup${el.matchNumber}`}
           >
             <div
               className={
