@@ -59,7 +59,6 @@ const Bracket = () => {
   }, []);
 
   useEffect(() => {
-    if (matchUpResponse.length) setIsLoading(false);
     displayDispatch({
       type: 'updateDisplay',
       payload: {
