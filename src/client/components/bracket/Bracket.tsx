@@ -18,7 +18,7 @@ import processMatchups from './processMatchups';
 import initialDisplayState from './initialDisplayState';
 
 // temporary
-const TEST_TOURNAMENT_URI = '64863e1bf5a5d7a132318e76';
+const TEST_TOURNAMENT_URI = '6492fa6aa6418811f50714a3';
 
 const Bracket = () => {
   const [displayState, displayDispatch] = useReducer(
@@ -41,6 +41,8 @@ const Bracket = () => {
       );
       console.log('axios res: ', response.data);
       setMatchUpResponse(response.data.matchUps);
+      // setround is async, is the problem -- ?
+      setRound(response.data.tournament.currentRound);
     } catch (err) {
       if (err instanceof AxiosError) {
         console.log(err.response);
@@ -126,6 +128,28 @@ const Bracket = () => {
     }
   };
 
+  // add validation on client side too -- shouldn't be able to go to a round out of range
+
+  const goToNextRound = async (id: string) => {
+    setRound(round + 1);
+    const response = await axios.put(
+      'http://localhost:8000/tournament/next-round',
+      { id }
+    );
+    console.log(response);
+    getMatchUps(id);
+  };
+
+  const goToPreviousRound = async (id: string) => {
+    setRound(round - 1);
+    const response = await axios.put(
+      'http://localhost:8000/tournament/previous-round',
+      { id }
+    );
+    console.log(response);
+    getMatchUps(id);
+  };
+
   return (
     <div>
       <div className='bracket-render-grid' style={displayState.displaySettings}>
@@ -154,10 +178,10 @@ const Bracket = () => {
       >
         Toggle View
       </button>
-      <button onClick={() => setRound(() => round + 1)}>
+      <button onClick={() => goToNextRound(TEST_TOURNAMENT_URI)}>
         TEST: Next Round
       </button>
-      <button onClick={() => setRound(() => round - 1)}>
+      <button onClick={() => goToPreviousRound(TEST_TOURNAMENT_URI)}>
         TEST: Previous Round
       </button>
       <button onClick={() => sendVotes(selected)}>Submit votes</button>

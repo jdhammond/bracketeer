@@ -22,6 +22,22 @@ tournamentRouter.patch('/votes', tournamentController.addVotes, (req, res) => {
   res.sendStatus(200);
 });
 
+tournamentRouter.put(
+  '/next-round',
+  tournamentController.nextRound,
+  (req, res) => {
+    res.sendStatus(200);
+  }
+);
+
+// tournamentRouter.put(
+//   '/previous-round',
+//   tournamentController.previousRound,
+//   (req, res) => {
+//     res.sendStatus(200);
+//   }
+// );
+
 // throw errors from middleware
 tournamentRouter.delete(
   '/:tournamentID',
@@ -30,6 +46,7 @@ tournamentRouter.delete(
     res.sendStatus(204);
   }
 );
+
 // only for development
 tournamentRouter.delete('/all', tournamentController.clearData, (req, res) =>
   res.sendStatus(204)
