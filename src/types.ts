@@ -65,8 +65,8 @@ export interface TournamentType {
   createTime: number; // unix timestamp
   roundInterval: number; //number?
   displayVotesDuringRound: boolean;
-  // currentRound: number;
-  // lastRound: number;
+  currentRound: number;
+  lastRound: number;
   // createdBy: User;
   // openToAll: boolean;
   // participants: User[]s <== actually, each user should have an array of associated tournament ids - much faster

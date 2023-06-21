@@ -1,10 +1,14 @@
-import { Controller, MatchUpInput } from '../../types';
+import {
+  ContestantType,
+  Controller,
+  MatchUpInput,
+  MatchUpType,
+} from '../../types';
 import { Tournament } from '../models/tournament.js';
 import { MatchUp } from '../models/matchUp.js';
 
 const tournamentController: Controller = {};
 
-// just a placeholder for now to quiet the Typescript errors
 tournamentController.getData = async (req, res, next) => {
   const { tournamentID } = req.params;
   try {
@@ -61,18 +65,18 @@ tournamentController.create = async (req, res, next) => {
   const { contestants, roundInterval, displayVotesDuringRound } = req.body;
 
   try {
+    // get number of rounds in this tournament:
+    let round = Math.log2(req.body.contestants.length);
+
     const tournament = await Tournament.create({
       createTime: Date.now(), // unix timestamp
       roundInterval,
       displayVotesDuringRound,
+      currentRound: 1,
+      lastRound: round,
     });
     console.log(tournament);
     const tournamentID = tournament._id;
-
-    // use connectDocsInTree logic
-    // get number of rounds in this tournament:
-
-    let round = Math.log2(req.body.contestants.length);
 
     // subtract 1 here beacuse the pre-increment isn't working in the .create() statements below. An async issue?
     let currentMatchNumber = round ** 2 - 1;
@@ -171,9 +175,117 @@ tournamentController.addVotes = async (req, res, next) => {
     return next({
       log: `Error from tournamentController.addVotes: ${err}`,
       status: 400,
-      message: { err: 'Failed to create tournament data' },
+      message: { err: 'Failed to add votes to tournament' },
     });
   }
 };
+
+tournamentController.nextRound = async (req, res, next) => {
+  const { id } = req.body;
+  console.log(`Advancing tournament ${id}...`);
+  try {
+    // get tournament by id and its matchups
+    const tournament = await Tournament.findById(id);
+    console.log(tournament);
+    const matchUps = await MatchUp.find({
+      tournament: id,
+      round: tournament!.currentRound,
+    });
+
+    // increment its current round if last round not reached
+    if (tournament!.currentRound <= tournament!.lastRound + 1) {
+      tournament!.currentRound += 1;
+      tournament!.save();
+
+      console.log('tournament current round is now ', tournament!.currentRound);
+
+      // for each matchup, choose the contestant with more votes
+      let winner: undefined | ContestantType;
+      for (let i = 0; i < matchUps.length; i++) {
+        if (matchUps[i].contestant1votes! > matchUps[i].contestant2votes!) {
+          winner = matchUps[i].contestant1;
+        } else if (
+          matchUps[i].contestant1votes! < matchUps[i].contestant2votes!
+        ) {
+          winner = matchUps[i].contestant2;
+        } else {
+          // if votes are tied, decide randomply
+          winner =
+            Math.random() > 0.5
+              ? matchUps[i].contestant1
+              : matchUps[i].contestant2;
+        }
+
+        // if this was the last round, declare a winner
+        // should tournament object have a winner property?
+        if (tournament!.currentRound === tournament!.lastRound + 1) {
+          console.log(`The winner is ${winner!.name}!`);
+          return next();
+        }
+
+        // if matchup index is even, assign winning contestant to contestant1 of next; if odd, contestant2;
+        const nextMatch = await MatchUp.findOne({
+          tournament: id,
+          matchNumber: matchUps[i].next,
+        });
+        if (i % 2 === 0) {
+          nextMatch!.contestant1 = winner;
+        } else {
+          nextMatch!.contestant2 = winner;
+        }
+        await nextMatch!.save();
+      }
+    } else {
+      throw new Error('Round number is out of bounds for this tournament');
+    }
+    return next();
+  } catch (err) {
+    return next({
+      log: `Error from tournamentController.nextRound: ${err}`,
+      status: 400,
+      message: { err: 'Failed to got to next round' },
+    });
+  }
+};
+
+// tournamentController.previousRound = async (req, res, next) => {
+//   const { id } = req.body;
+//   console.log(`rewinding tournament ${id}`);
+//   try {
+//     // get tournament by id and its matchups
+//     const tournament = await Tournament.findById(id);
+//     const matchUps = await MatchUp.find({
+//       tournament: id,
+//       round: tournament!.currentRound,
+//     });
+
+//     // clear contestants and votes from from currentRound matchups
+//     for (let i = 0; i < matchUps.length; i--) {
+//       matchUps[i].contestant1 = undefined;
+//       matchUps[i].contestant2 = undefined;
+//       matchUps[i].contestant1votes = 0;
+//       matchUps[i].contestant2votes = 0;
+//       await matchUps[i].save();
+//     }
+
+//     // decrement round
+//     if (tournament!.currentRound > 1) {
+//       tournament!.currentRound = tournament!.currentRound - 1;
+//       tournament!.save();
+//     } else {
+//       console.log(
+//         "This is the first round of the tournament, there's no round before it"
+//       );
+//     }
+
+//     next();
+//   } catch (err) {
+//     return next({
+//       log: `Error from tournamentController.previousRound: ${err}`,
+//       status: 400,
+//       message: { err: 'Failed to go to previous round' },
+//     });
+//   }
+// };
 
 export default tournamentController;
