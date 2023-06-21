@@ -18,7 +18,7 @@ import processMatchups from './processMatchups';
 import initialDisplayState from './initialDisplayState';
 
 // temporary
-const TEST_TOURNAMENT_URI = '6492fa6aa6418811f50714a3';
+const TEST_TOURNAMENT_URI = '6492ff2d2a17d74a5468a758';
 
 const Bracket = () => {
   const [displayState, displayDispatch] = useReducer(
